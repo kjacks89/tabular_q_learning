@@ -18,8 +18,6 @@ from __future__ import print_function
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------------------------
 
-# Tutorial sample #6: Discrete movement, rewards, and learning
-
 # The "Cliff Walking" example using Q-learning.
 # From pages 148-150 of:
 # Richard S. Sutton and Andrews G. Barto
@@ -37,6 +35,7 @@ import os
 import random
 import sys
 import time
+import numpy as np
 if sys.version_info[0] == 2:
     # Workaround for https://github.com/PythonCharmers/python-future/issues/262
     import Tkinter as tk
@@ -66,6 +65,15 @@ class TabQAgent(object):
         #is the self.learn variable below
         self.epsilon = 0.1 #chance of taking random action instead of highest value action
         self.learn = True 
+        self.optimal = False
+        self.count = 0
+        self.check = []
+        self.s1 = False
+        self.s2 = False
+        self.s3 = False
+        self.s4 = False
+        self.s5 = False
+        self.s6 = False
         ###/
         self.canvas = None
         self.root = None
@@ -73,13 +81,100 @@ class TabQAgent(object):
     def updateQTable( self, reward, current_state ):
         """Change q_table to reflect what we have learnt."""
         ###modified
-        self.q_table[self.prev_s][self.prev_a] = self.q_table[self.prev_s][self.prev_a]
-        + self.alpha * (reward + self.gamma * max(self.q_table[current_state]) - self.q_table[self.prev_s][self.prev_a])
- 
+        previous_q_value = self.q_table[self.prev_s][self.prev_a]
+        
+        self.q_table[self.prev_s][self.prev_a] = previous_q_value + self.alpha * (reward + self.gamma * max(self.q_table[current_state]) - previous_q_value)
+        
+        #below is checking if q_table has reached optimal path
+        difference = self.q_table[self.prev_s][self.prev_a] - previous_q_value #change in q value
+        state_value = (self.prev_s, self.prev_a)
+        if state_value not in self.check:
+            self.check.append(state_value)
+        if len(self.check) >= 44:#if all actions have been picked for all states (11 non-terminating states * 4 actions each = 44)
+            if self.prev_s == "1:4" and difference < 0.01 and self.s1 == False:#if on optimal path and very little change in q-value
+                self.count = self.count + 1
+                self.s1 = True
+            if self.prev_s == "1:3" and difference < 0.01 and self.s2 == False:
+                self.count = self.count + 1
+                self.s2 = True
+            if self.prev_s == "2:3" and difference < 0.01 and self.s3 == False:
+                self.count = self.count + 1
+                self.s3 = True
+            if self.prev_s == "3:3" and difference < 0.01 and self.s4 == False:
+                self.count = self.count + 1
+                self.s4 = True
+            if self.prev_s == "4:3" and difference < 0.01 and self.s5 == False:
+                self.count = self.count + 1
+                self.s5 = True
+            if self.prev_s == "5:3" and difference < 0.01 and self.s6 == False:
+                self.count = self.count + 1
+                self.s6 = True
+        if self.count == 6:#if all states in optimal path have very little change in q-value, then there is convergence
+            self.optimal = True
+            for state in self.q_table:
+                m = max(self.q_table[state]) #highest q value for previous state
+                if state == "1:4" and self.q_table[state][2] != m:    
+                    self.optimal = False
+                if state == "1:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "2:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "3:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "4:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "5:3" and self.q_table[state][3] != m:    
+                    self.optimal = False
+        
     def updateQTableFromTerminatingState( self, reward ):
         """Change q_table to reflect what we have learnt, after reaching a terminal state."""
         ###modified
+        previous_q_value = self.q_table[self.prev_s][self.prev_a]
+        #print(self.prev_s)
         self.q_table[self.prev_s][self.prev_a] = self.q_table[self.prev_s][self.prev_a] + self.alpha * ( reward - self.q_table[self.prev_s][self.prev_a]) 
+        
+        #below is checking if q_table has reached optimal path
+        #m = max(self.q_table[self.prev_s]) #highest q value for previous state
+        difference = self.q_table[self.prev_s][self.prev_a] - previous_q_value #change in q value
+        state_value = (self.prev_s, self.prev_a)
+        if state_value not in self.check:
+            self.check.append(state_value)
+        if len(self.check) >= 44:#if all actions have been picked for all states (11 non-terminating states * 4 actions each = 44)
+            if self.prev_s == "1:4" and difference < 0.01 and self.s1 == False:#if on optimal path and very little change in q-value
+                self.count = self.count + 1
+                self.s1 = True
+            if self.prev_s == "1:3" and difference < 0.01 and self.s2 == False:
+                self.count = self.count + 1
+                self.s2 = True
+            if self.prev_s == "2:3" and difference < 0.01 and self.s3 == False:
+                self.count = self.count + 1
+                self.s3 = True
+            if self.prev_s == "3:3" and difference < 0.01 and self.s4 == False:
+                self.count = self.count + 1
+                self.s4 = True
+            if self.prev_s == "4:3" and difference < 0.01 and self.s5 == False:
+                self.count = self.count + 1
+                self.s5 = True
+            if self.prev_s == "5:3" and difference < 0.01 and self.s6 == False:
+                self.count = self.count + 1
+                self.s6 = True
+        if self.count == 6:#if all states in optimal path have very little change in q-value, then there is convergence
+            self.optimal = True
+            for state in self.q_table:
+                m = max(self.q_table[state]) #highest q value for previous state
+                if state == "1:4" and self.q_table[state][2] != m:    
+                    self.optimal = False
+                if state == "1:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "2:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "3:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "4:3" and self.q_table[state][1] != m:    
+                    self.optimal = False
+                if state == "5:3" and self.q_table[state][3] != m:    
+                    self.optimal = False
+
     def act(self, world_state, agent_host, current_r ):
         """take 1 action in response to the current world state"""
         
@@ -89,8 +184,9 @@ class TabQAgent(object):
         if not u'XPos' in obs or not u'ZPos' in obs:
             self.logger.error("Incomplete observation received: %s" % obs_text)
             return 0
+		#changed current_s coordinate format to read row:column instead of column:row
         current_s = "%d:%d" % (int(obs[u'ZPos']), int(obs[u'XPos']))
-        self.logger.debug("State: %s (x = %.2f, z = %.2f)" % (current_s, float(obs[u'ZPos']), float(obs[u'XPos'])))
+        self.logger.debug("State: %s (z = %.2f, x = %.2f)" % (current_s, float(obs[u'ZPos']), float(obs[u'XPos'])))
         if current_s not in self.q_table:
             self.q_table[current_s] = ([0] * len(self.actions))
 
@@ -101,7 +197,7 @@ class TabQAgent(object):
             initial_x = int(obs[u'ZPos'])
             initial_z = int(obs[u'XPos'])
             print('Initial position: ', initial_x,',',initial_z)
-        self.drawQ( curr_x = int(obs[u'XPos']), curr_y = int(obs[u'ZPos']) )
+        self.drawQ( curr_x = int(obs[u'ZPos']), curr_y = int(obs[u'XPos']) )
 
         # selectrthe next action
         rnd = random.random()
@@ -278,19 +374,20 @@ max_retries = 3
 if agent_host.receivedArgument("test"):
     num_repeats = 1
 else:
-    num_repeats = 210
+    num_repeats = 1000
 
 cumulative_rewards = []
-#run this number of episodes for the agent
+#run this number of episodes for the agent 
 for i in range(num_repeats):
-
+    if agent.optimal == True:
+        break
     print()
     print('Repeat %d of %d' % ( i+1, num_repeats ))
     
     my_mission_record = MalmoPython.MissionRecordSpec()
 
-    if num_repeats % 20 == 0 and self.epsilon > 0:
-        self.epsilon = self.epsilon - 0.01    
+    #if num_repeats % 20 == 0 and self.epsilon > 0:
+    #    self.epsilon = self.epsilon - 0.01    
 
     for retry in range(max_retries):
         try:
@@ -318,11 +415,27 @@ for i in range(num_repeats):
     print('Cumulative reward: %d' % cumulative_reward)
     cumulative_rewards += [ cumulative_reward ]
 
+    print("All values in Q-Table for the following actions: ") 
+    print("\t" + str(agent.actions))
+    for observation in agent.q_table:
+        colon = observation.index(":")
+        row = observation[:colon]
+        column = observation[colon+1:]
+        coordinate = "(" + row + "," + column + ")"
+        print(coordinate + ": " + str(agent.q_table[observation]))
     # -- clean up -- #
     time.sleep(0.5) # (let the Mod reset)
 print("Done.")
 
 print("Cumulative rewards for all %d runs:" % num_repeats)
 print(cumulative_rewards)
-print("Q-Table: ")
-print(agent.q_table)
+print("All values in Q-Table for the following actions: ") 
+print("\t" + str(agent.actions))
+for observation in agent.q_table:
+    colon = observation.index(":")
+    row = observation[:colon]
+    column = observation[colon+1:]
+    coordinate = "(" + row + "," + column + ")"
+    print(coordinate + ": " + str(agent.q_table[observation]))
+if agent.optimal == True:
+    print("Q-function converged")
